@@ -34,15 +34,14 @@ class Motors(object):
     def __init__(self):
 
          # --- Joint Variables
-        self.position_desired = [2048,2048,2048] # --- Desired Position
-        self.position_present = [2048,2048,2048] # --- Present Position
+        self.goal_position = [2048,2048,2048] # --- Desired Position
+        self.present_position = [2048,2048,2048] # --- Present Position
 
         # --- General Variables
         self.DXL_ID = np.array([0,1,2])
 
         # --- Addresses EEPROM
         self.ADDR_OP_MODE = 11
-        self.ADDR_PWM_LIMIT = 36
         self.ADDR_MAX_POS_LIMIT = 48
         self.ADDR_MIN_POS_LIMIT = 52
         #125 Current 
@@ -52,19 +51,15 @@ class Motors(object):
         self.ADDR_LED_EN = 65 
         self.ADDR_GOAL_POS = 116
         self.ADDR_PRESENT_POS = 132
-        self.ADDR_GOAL_PWM = 100
-        self.ADDR_PRESENT_PWM = 124
 
         # --- Byte Length
-        self.LEN_GOAL_PWM = 2
-        self.LEN_PRESENT_PWM = 2
         self.LEN_GOAL_POS = 4
         self.LEN_PRESENT_POS = 4
 
 
         # --- General Settings
         self.PROT_VR = 2.0
-        self.BRATE = 1000000
+        self.BRATE = 57600
         self.DEVICE = '/dev/ttyUSB0'
 
         self.portHandler = PortHandler(self.DEVICE)
@@ -76,10 +71,10 @@ class Motors(object):
         # --- Configure port
         try:
             self.portHandler.openPort()
-            rospy.loginfo("\nSucceeded to open the port.\n")
+            rospy.loginfo("Succeeded to open the port.\n")
 
         except:
-            rospy.logfatal("\nFailed to open the port.\n")
+            rospy.logfatal("Failed to open the port.\n")
             getch()
             quit()
 
@@ -93,10 +88,10 @@ class Motors(object):
 
 
         # --- ROS COMMS
-        self.posSubscriber = rospy.Subscriber("pos_goal_value",Int32MultiArray, self.update_goal_position)
+        self.posSubscriber = rospy.Subscriber("rot_joints__goal_position",Int32MultiArray, self.update_goal_position)
         rospy.sleep(0.005) #pwm_goal_value
 
-        self.posPublisher = rospy.Publisher("pos_present_value",Int32MultiArray, queue_size=10)
+        self.posPublisher = rospy.Publisher("rot_joints__present_position",Int32MultiArray, queue_size=10)
         rospy.sleep(0.005) #pos_goal_value
 
 
@@ -107,11 +102,9 @@ class Motors(object):
             
             # --- Define Position Control / 4095 to 0 at 0.088 / 512 (45deg)
             dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, ID, self.ADDR_OP_MODE, 3)
-            
-            dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, ID, self.ADDR_PWM_LIMIT, 885) 
 
-            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MAX_POS_LIMIT, 2560)
-            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MIN_POS_LIMIT, 1536)
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MAX_POS_LIMIT, 4095)
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MIN_POS_LIMIT, 0)
 
             dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, ID, self.ADDR_TORQUE_EN, True)
 
@@ -128,7 +121,7 @@ class Motors(object):
                                "\nFailed setup for Motor ID: " + str(ID) + "\n")
                 self.shutdown()
 
-        rospy.loginfo("All motors ready to use!\n")
+        rospy.loginfo("Motors enabled and ready to use.\n")
 
 
     def update_goal_position(self,msg):
@@ -136,7 +129,7 @@ class Motors(object):
         data_array = msg.data # --- Int32MultiArray data
 
         if len(data_array) == len(self.DXL_ID):
-            self.position_desired = data_array
+            self.goal_position = data_array
 
         else:
             rospy.logerr("Invalid array recieved from callback {callback}. \n".format(callback="update_goal_position"))
@@ -145,9 +138,7 @@ class Motors(object):
     def publish_present_position(self):
 
         pub_array = Int32MultiArray()
-        pub_array.data = self.position_present
-
-        print(pub_array)
+        pub_array.data = self.present_position
 
         self.posPublisher.publish(pub_array)
 
@@ -156,25 +147,24 @@ class Motors(object):
 
         for ID in self.DXL_ID:
 
-            param_goal_position = [DXL_LOBYTE(DXL_LOWORD(self.position_desired[ID])), DXL_HIBYTE(DXL_LOWORD(self.position_desired[ID])),
-                                   DXL_LOBYTE(DXL_HIWORD(self.position_desired[ID])), DXL_HIBYTE(DXL_HIWORD(self.position_desired[ID]))]
+            param_goal_position = [DXL_LOBYTE(DXL_LOWORD(self.goal_position[ID])), DXL_HIBYTE(DXL_LOWORD(self.goal_position[ID])),
+                                   DXL_LOBYTE(DXL_HIWORD(self.goal_position[ID])), DXL_HIBYTE(DXL_HIWORD(self.goal_position[ID]))]
 
             dxl_addparam_result = self.pos_groupSyncWrite.addParam(ID, param_goal_position)
 
             if dxl_addparam_result != True:
-
-                print("Failed to set Goal Position for Motor ID: " + str(ID) + ". groupSyncWrite addparam failed.\n")
+                rospy.logerr("Failed to set Goal Position for Motor ID: " + str(ID) + ". groupSyncWrite addparam failed.\n")
                 self.shutdown()
-
             else: 
-                print("Goal Position set to Motor ID: " + str(ID) + " to " + str(self.position_desired[ID] * 0.113) + "%." + "\n")
+                pass
+                #rospy.loginfo("Goal Position set to Motor ID: " + str(ID) + " to " + str(self.goal_position[ID]) + " units." + "\n")
 
 
         dxl_comm_result = self.pos_groupSyncWrite.txPacket()
 
         if dxl_comm_result != COMM_SUCCESS:
 
-            print("Failed to group write Goal PWM.\n")
+            rospy.logfatal("Failed to group write Goal Position.\n")
             self.shutdown()
 
         self.pos_groupSyncWrite.clearParam()
@@ -187,14 +177,13 @@ class Motors(object):
             dxl_addparam_result = self.pos_groupSyncRead.addParam(ID)
 
             if dxl_addparam_result != True:
-                print("Failed setup for Motor ID: " + str(ID) + ". groupSyncRead addparam failed.\n")
+                rospy.logerr("Failed setup for Motor ID: " + str(ID) + ". groupSyncRead addparam failed.\n")
                 self.shutdown()
 
         dxl_comm_result = self.pos_groupSyncRead.txRxPacket()
 
         if dxl_comm_result != COMM_SUCCESS:
-            print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
-            print("Failed to group read Present Position.\n")
+            rospy.logfatal("Failed to group read Present Position.\n" + "%s" % self.packetHandler.getTxRxResult(dxl_comm_result) + "\n")
             self.shutdown()
 
         for ID in self.DXL_ID:
@@ -202,17 +191,17 @@ class Motors(object):
             dxl_getdata_result = self.pos_groupSyncRead.isAvailable(ID, self.ADDR_PRESENT_POS, self.LEN_PRESENT_POS)
 
             if dxl_getdata_result != True:
-                print("Failed to read Present Position from Motor ID: " + str(ID) + ". groupSyncRead getdata failed.\n")
+                rospy.logerr("Failed to read Present Position from Motor ID: " + str(ID) + ". groupSyncRead getdata failed.\n")
                 self.shutdown()
 
-            self.position_present[ID] = self.pos_groupSyncRead.getData(ID, self.ADDR_PRESENT_POS, self.LEN_PRESENT_POS)
+            self.present_position[ID] = self.pos_groupSyncRead.getData(ID, self.ADDR_PRESENT_POS, self.LEN_PRESENT_POS)
 
         self.pos_groupSyncRead.clearParam()
 
 
     def shutdown(self):
 
-        rospy.loginfo("Shutting down all motors. \n")
+        rospy.logwarn("Shutting down all motors.\n")
 
         for ID in self.DXL_ID:
             self.packetHandler.write1ByteTxRx(self.portHandler, ID, self.ADDR_LED_EN, False)
@@ -225,11 +214,11 @@ class Motors(object):
 
 def main():
 
-    rospy.init_node("pwm_node")
+    rospy.init_node("rot_motors_node")
     freq = 10
     rate = rospy.Rate(freq)
 
-    robot = Robot()
+    robot = Motors()
 
     while not rospy.is_shutdown():
 

@@ -100,6 +100,16 @@ void setup(){
   DDRD |= _BV(PD6);
   DDRD |= _BV(PD7);
 
+  //External Interrupt INT1
+
+  /*
+  EICRA |= _BV(ISC11);
+  EICRA |= _BV(ISC10);
+
+  EIMSK |= _BV(INT1);
+
+  sei();
+  */
 
   //Timer0 Delta
   delta_freq = 1000;
@@ -138,15 +148,6 @@ void loop(){
 
 }
 
-void delay_t0(float delay_sec){
-  start_time = current_time;
-  diff_time = 0;
-
-  while (diff_time <= delay_sec){
-    diff_time = current_time - start_time;
-  }
-}
-
 
 void stepper_direction(float lin_vel, uint8_t *dir){
   if(lin_vel >= 0){
@@ -158,7 +159,6 @@ void stepper_direction(float lin_vel, uint8_t *dir){
     *dir = 0;
   }
 }
-
 
 void stepper_speed(uint32_t *pwm_freq, float *velocity, uint16_t *TOP, float *resolution){
   *pwm_freq = abs(*velocity) / *resolution;
@@ -179,29 +179,10 @@ void timer1_start(){
   TCCR1B |= _BV(CS10);
 }
 
-
 void timer1_stop(){
   TCCR1B &= ~_BV(CS11);
   TCCR1B &= ~_BV(CS10);
 }
-
-
-void timer0_setup(uint8_t *TOP){
-  
-  OCR0A = *TOP;
-
-  TIMSK0 |= _BV(OCIE0A);
-
-  TCCR0A = 0;
-  TCCR0A |= _BV(WGM00);
-  TCCR0A |= _BV(WGM01);
-
-  TCCR0B = 0;
-  TCCR0B |= _BV(WGM02);
-  TCCR0B |= _BV(CS00);
-  TCCR0B |= _BV(CS02);
-}
-
 
 void timer1_setup(uint16_t *TOP){
 
@@ -223,6 +204,42 @@ void timer1_setup(uint16_t *TOP){
   //TCCR1B |= _BV(CS10);
 }
 
+
+void delay_t0(float delay_sec){
+  start_time = current_time;
+  diff_time = 0;
+
+  while (diff_time <= delay_sec){
+    diff_time = current_time - start_time;
+  }
+}
+
+void timer0_setup(uint8_t *TOP){
+  
+  OCR0A = *TOP;
+
+  TIMSK0 |= _BV(OCIE0A);
+
+  TCCR0A = 0;
+  TCCR0A |= _BV(WGM00);
+  TCCR0A |= _BV(WGM01);
+
+  TCCR0B = 0;
+  TCCR0B |= _BV(WGM02);
+  TCCR0B |= _BV(CS00);
+  TCCR0B |= _BV(CS02);
+}
+
+
+
+/*
+ISR(INT1_vect){
+  current_position = 0;
+  timer1_stop();
+
+  EIMSK &= ~(_BV(INT1));
+}
+*/
 
 ISR(TIMER0_COMPA_vect){
   OCR0A = T0_TOP;
