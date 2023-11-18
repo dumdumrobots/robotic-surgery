@@ -4,7 +4,7 @@
 import os,rospy
 import numpy as np
 
-from std_msgs.msg import Int32MultiArray, Bool
+from std_msgs.msg import Int32MultiArray
 from dynamixel_sdk import *
 
 

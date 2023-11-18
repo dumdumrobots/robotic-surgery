@@ -45,6 +45,7 @@ uint8_t T0_TOP;
 uint16_t T1_TOP;
 
 volatile uint8_t onPosition = 0;
+volatile int8_t coherent_dir = 0;
 
 
 // --- ROS Setup 
@@ -87,7 +88,7 @@ void setup(){
   node_handle.subscribe(goal_pos_subscriber);
   node_handle.subscribe(goal_vel_subscriber);
   node_handle.advertise(pos_feedback_publisher);
-
+  
 
   //PIN I/O Setup
 
@@ -121,18 +122,19 @@ void setup(){
   timer1_setup(&T1_TOP);
 
   delay_t0(1);
-
 }
 
 void loop(){
 
   error_position = current_position - goal_position;
 
+  coherent_dir = -(error_position / abs(error_position)) * (goal_velocity/abs(goal_velocity));
+
   if (abs(error_position) >= resolution){
     onPosition = 0;
   }
 
-  if (onPosition == 0){
+  if (onPosition == 0 && coherent_dir == 1 && goal_position >= 0){
     stepper_microstep(&resolution, &micro_step);
     stepper_direction(goal_velocity, &dir);
     stepper_speed(&pwm_freq, &goal_velocity, &T1_TOP, &resolution);
@@ -145,7 +147,6 @@ void loop(){
   
   node_handle.spinOnce();
   delay_t0(0.01);
-
 }
 
 
@@ -168,9 +169,37 @@ void stepper_speed(uint32_t *pwm_freq, float *velocity, uint16_t *TOP, float *re
 void stepper_microstep(float *resolution, float *micro_step){
   *resolution = 0.01 * *micro_step;
 
-  //PORTD |= _BV(PD5);
-  //PORTD |= _BV(PD6);
-  //PORTD |= _BV(PD7);
+  /*
+
+  if (*velocity < 1){
+    PORTD &= ~(_BV(PD5));
+    PORTD &= ~(_BV(PD6));
+    PORTD &= ~(_BV(PD7));
+  }
+
+  else if (*velocity < 1){
+    //PORTD |= _BV(PD5);
+    //PORTD |= _BV(PD6);
+    //PORTD |= _BV(PD7);
+  }
+
+  else if (*velocity < 1){
+    //PORTD |= _BV(PD5);
+    //PORTD |= _BV(PD6);
+    //PORTD |= _BV(PD7);
+  }
+
+  else if (*velocity < 1){
+    //PORTD |= _BV(PD5);
+    //PORTD |= _BV(PD6);
+    //PORTD |= _BV(PD7);
+  }
+
+  else if (*velocity < 1){
+    //PORTD |= _BV(PD5);
+    //PORTD |= _BV(PD6);
+    //PORTD |= _BV(PD7);
+  }*/
 }
 
 
