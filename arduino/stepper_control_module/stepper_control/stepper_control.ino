@@ -57,6 +57,7 @@ std_msgs::Float32 goal_pos_callback_msg;
 std_msgs::Float32 goal_vel_callback_msg;
 std_msgs::Float32 current_pos_feedback_msg;
 
+
 void pos_callback(const std_msgs::Float32& goal_pos_callback_msg) {
   goal_position = goal_pos_callback_msg.data;
 }
@@ -72,18 +73,8 @@ ros::Publisher pos_feedback_publisher("prism_joint__current_position", &current_
 
 
 void setup(){
-
-  current_time = 0;
-  current_position = 0;
-
-  goal_velocity = 0;
-  goal_position = 0;
-
-  error_position = 0;
-
-
-  // --- ROS Init
   
+  // --- ROS Init
   node_handle.initNode();
   node_handle.subscribe(goal_pos_subscriber);
   node_handle.subscribe(goal_vel_subscriber);
@@ -91,26 +82,44 @@ void setup(){
   
 
   //PIN I/O Setup
-
   DDRB = 0;
   DDRB |= _BV(PB2);
   DDRB |= _BV(PB1);
 
   DDRD = 0;
+  DDRD &= ~_BV(PD2);
   DDRD |= _BV(PD5);
   DDRD |= _BV(PD6);
   DDRD |= _BV(PD7);
 
-  //External Interrupt INT1
+  PORTD = 0;
+  PORTD &= ~_BV(PD2);
 
-  /*
-  EICRA |= _BV(ISC11);
-  EICRA |= _BV(ISC10);
+  
+  //External Interrupt INT0
+  EICRA |= _BV(ISC01);
+  EICRA &= ~_BV(ISC00);
 
-  EIMSK |= _BV(INT1);
+  EIMSK |= _BV(INT0);
 
   sei();
-  */
+
+
+  //Initial Variables
+  current_time = 0;
+  
+  goal_position = 0;
+  error_position = 0;
+  
+  if((PIND & _BV(PD2)) != 0){
+    current_position = 300;
+    goal_velocity = -10;
+  }
+  else{
+    current_position = 0;
+    goal_velocity = 0;
+  }
+
 
   //Timer0 Delta
   delta_freq = 1000;
@@ -260,15 +269,20 @@ void timer0_setup(uint8_t *TOP){
 }
 
 
+ISR(INT0_vect){
 
-/*
-ISR(INT1_vect){
+  if(PD2)
+
   current_position = 0;
-  timer1_stop();
 
-  EIMSK &= ~(_BV(INT1));
+  goal_velocity = 0;
+  goal_position = 0;
+
+  error_position = 0;
+
+  timer1_stop();
 }
-*/
+
 
 ISR(TIMER0_COMPA_vect){
   OCR0A = T0_TOP;
