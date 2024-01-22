@@ -144,7 +144,7 @@ void loop(){
   }
 
   if (onPosition == 0 && coherent_dir == 1 && goal_position >= 0){
-    stepper_microstep(&resolution, &micro_step);
+    stepper_microstep(&resolution, &micro_step,&goal_velocity);
     stepper_direction(goal_velocity, &dir);
     stepper_speed(&pwm_freq, &goal_velocity, &T1_TOP, &resolution);
 
@@ -175,40 +175,31 @@ void stepper_speed(uint32_t *pwm_freq, float *velocity, uint16_t *TOP, float *re
   *TOP = (sys_clk_freq / (2 * t1_prescaler * *pwm_freq)) - 1;
 }
 
-void stepper_microstep(float *resolution, float *micro_step){
-  *resolution = 0.01 * *micro_step;
+void stepper_microstep(float *resolution, float *micro_step, float *velocity){
+  
 
-  /*
-
-  if (*velocity < 1){
+  if (abs(*velocity) >= 5.5){
     PORTD &= ~(_BV(PD5));
     PORTD &= ~(_BV(PD6));
     PORTD &= ~(_BV(PD7));
+    *micro_step = 1;
   }
 
-  else if (*velocity < 1){
-    //PORTD |= _BV(PD5);
-    //PORTD |= _BV(PD6);
-    //PORTD |= _BV(PD7);
+  if (abs(*velocity) < 5.5 and abs(*velocity) >= 2.5){
+    PORTD |= (_BV(PD5));
+    PORTD &= ~(_BV(PD6));
+    PORTD &= ~(_BV(PD7));
+    *micro_step = 0.5;
   }
 
-  else if (*velocity < 1){
-    //PORTD |= _BV(PD5);
-    //PORTD |= _BV(PD6);
-    //PORTD |= _BV(PD7);
+  if (abs(*velocity) < 2.5){
+    PORTD &= ~(_BV(PD5));
+    PORTD |= (_BV(PD6));
+    PORTD &= ~(_BV(PD7));
+    *micro_step = 0.25;
   }
 
-  else if (*velocity < 1){
-    //PORTD |= _BV(PD5);
-    //PORTD |= _BV(PD6);
-    //PORTD |= _BV(PD7);
-  }
-
-  else if (*velocity < 1){
-    //PORTD |= _BV(PD5);
-    //PORTD |= _BV(PD6);
-    //PORTD |= _BV(PD7);
-  }*/
+  *resolution = 0.01 * *micro_step;
 }
 
 

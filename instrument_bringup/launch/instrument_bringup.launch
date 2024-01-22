@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <node name="prism_joint__serial" pkg="rosserial_python" type="serial_node.py" output="screen">
+    <param name="port" value="/dev/ttyUSB0"/>
+  </node>
+
+  <node name="rot_joints__servos" pkg="instrument_bringup" type="rot_joints__servos.py" output="screen"/>
+
+  <param name="robot_description" textfile="$(find instrument_description)/urdf/instrument.urdf" />
+
+  <!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /-->
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <param name="use_gui" value="true"/>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find surgeon)/config/scissor_config.rviz" required="true"/>
+
+</launch>

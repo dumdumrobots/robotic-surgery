@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<robot name="robotic_instrument">
+
+   <material name="white">
+      <color rgba="1 1 1 1"/>
+   </material>
+
+   <link name = "world" />
+ 
+   <link name="frame">
+      <visual>
+         <origin xyz="-0.41250 0 -5.24" rpy="1.5708 0 3.14159"/>
+         <geometry>
+            <mesh filename="package://instrument_description/meshes/frame.stl" scale="0.01 0.01 0.01"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+
+   <link name="platform">
+      <visual>
+         <origin xyz="-0.41250 0 -3.24" rpy="0 0 -1.5708"/>
+         <geometry>
+            <mesh filename="package://instrument_description/meshes/platform.stl" scale="0.01 0.01 0.01"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+
+   <link name="scissor_base">
+      <visual>
+         <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+         <geometry>
+            <mesh filename="package://instrument_description/meshes/scissor_base.stl" scale="0.01 0.01 0.01"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+
+   <link name="scissor_neck">
+      <visual>
+         <origin xyz="0 0 0" rpy="0 1.5708 0"/>
+         <geometry>
+            <mesh filename="package://instrument_description/meshes/scissor_neck.stl" scale="0.01 0.01 0.01"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+
+   <link name="scissor_blade_top">
+      <visual>
+         <origin xyz="0 0 0" rpy="0 1.5708 -1.5708"/>
+         <geometry>
+            <mesh filename="package://instrument_description/meshes/scissor_blade.stl" scale="0.01 0.01 0.01"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+
+   <link name="scissor_blade_bot">
+      <visual>
+         <origin xyz="0 0 0" rpy="0 -1.5708 -1.5708"/>
+         <geometry>
+            <mesh filename="package://instrument_description/meshes/scissor_blade.stl" scale="0.01 0.01 0.01"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+
+
+
+   <joint name="world__frame" type="revolute">
+      <limit effort="30" velocity="1.0" lower="-1.5708" upper="0"/> 
+      <parent link="world"/>
+      <child link="frame"/>
+      <origin xyz="-3 0 3" rpy="-3.14159 -1.5708 0"/>
+      <axis xyz="0 1 0"/>
+   </joint>
+
+   <joint name="frame__platform" type="prismatic">
+      <limit effort="30" velocity="1.0" lower="0" upper="2.46"/> 
+      <parent link="frame"/>
+      <child link="platform"/>
+      <origin xyz="0 0 0.14" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+   </joint>
+
+   <joint name="platform__scissor_base" type="fixed">
+      <parent link="platform"/>
+      <child link="scissor_base"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+   </joint>
+
+   <joint name="scissor_base__scissor_neck" type="revolute">
+      <limit effort="30" velocity="1.0" lower="-1.5708" upper="1.5708"/> 
+      <parent link="scissor_base"/>
+      <child link="scissor_neck"/>
+      <origin xyz="0 0 0.08378" rpy="1.5708 0 0"/>
+      <axis xyz="0 0 1"/>
+   </joint>
+
+   <joint name="scissor_neck__scissor__blade_top" type="revolute">
+      <limit effort="30" velocity="1.0" lower="-1.5708" upper="1.5708"/> 
+      <parent link="scissor_neck"/>
+      <child link="scissor_blade_top"/>
+      <origin xyz="0.01125 0.0878 0" rpy="1.5708 0 1.5708"/>
+      <axis xyz="0 0 1"/>
+   </joint>
+
+   <joint name="scissor_base__scissor__blade_bot" type="revolute">
+      <limit effort="30" velocity="1.0" lower="-1.5708" upper="1.5708"/> 
+      <parent link="scissor_neck"/>
+      <child link="scissor_blade_bot"/>
+      <origin xyz="-0.01125 0.0878 0" rpy="1.5708 0 1.5708"/>
+      <axis xyz="0 0 1"/>
+   </joint>
+
+</robot>
