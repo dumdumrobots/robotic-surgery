@@ -71,18 +71,18 @@ class Servos(object):
         # --- Configure port
         try:
             self.portHandler.openPort()
-            rospy.loginfo("Succeeded to open the port.\n")
+            rospy.loginfo("Succeeded to open the port.")
 
         except:
-            rospy.logfatal("Failed to open the port.\n")
+            rospy.logfatal("Failed to open the port.")
             getch()
             quit()
 
         try:
             self.portHandler.setBaudRate(self.BRATE)
-            rospy.loginfo("Baudrate changed to " + str(self.BRATE) + "\n")
+            rospy.loginfo("Baudrate changed to " + str(self.BRATE))
         except:
-            rospy.logfatal("Failed to change the baudrate.\n")
+            rospy.logfatal("Failed to change the baudrate.")
             getch()
             quit()
 
@@ -112,16 +112,16 @@ class Servos(object):
             if dxl_comm_result != COMM_SUCCESS:
 
                 rospy.logfatal("%s" % self.packetHandler.getTxRxResult(dxl_comm_result) + 
-                               "\nFailed setup for Motor ID: " + str(ID) + "\n")
+                               "\nFailed setup for Motor ID: " + str(ID))
                 self.shutdown()
 
             elif dxl_error != 0:
 
                 rospy.logfatal("%s" % self.packetHandler.getTxRxResult(dxl_comm_result) + 
-                               "\nFailed setup for Motor ID: " + str(ID) + "\n")
+                               "\nFailed setup for Motor ID: " + str(ID))
                 self.shutdown()
 
-        rospy.loginfo("Servos enabled and ready to use.\n")
+        rospy.loginfo("Servos enabled and ready to use.")
 
 
     def update_goal_position(self,msg):
@@ -132,7 +132,7 @@ class Servos(object):
             self.goal_position = data_array
 
         else:
-            rospy.logerr("Invalid array recieved from callback {callback}. \n".format(callback="update_goal_position"))
+            rospy.logerr("Invalid array recieved from callback {callback}.".format(callback="update_goal_position"))
 
 
     def publish_present_position(self):
@@ -164,7 +164,7 @@ class Servos(object):
 
         if dxl_comm_result != COMM_SUCCESS:
 
-            rospy.logfatal("Failed to group write Goal Position.\n")
+            rospy.logfatal("Failed to group write Goal Position.")
             self.shutdown()
 
         self.pos_groupSyncWrite.clearParam()
@@ -177,13 +177,13 @@ class Servos(object):
             dxl_addparam_result = self.pos_groupSyncRead.addParam(ID)
 
             if dxl_addparam_result != True:
-                rospy.logerr("Failed setup for Motor ID: " + str(ID) + ". groupSyncRead addparam failed.\n")
+                rospy.logerr("Failed setup for Motor ID: " + str(ID) + ". groupSyncRead addparam failed.")
                 self.shutdown()
 
         dxl_comm_result = self.pos_groupSyncRead.txRxPacket()
 
         if dxl_comm_result != COMM_SUCCESS:
-            rospy.logfatal("Failed to group read Present Position.\n" + "%s" % self.packetHandler.getTxRxResult(dxl_comm_result) + "\n")
+            rospy.logfatal("Failed to group read Present Position." + "%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
             self.shutdown()
 
         for ID in self.DXL_ID:
@@ -191,7 +191,7 @@ class Servos(object):
             dxl_getdata_result = self.pos_groupSyncRead.isAvailable(ID, self.ADDR_PRESENT_POS, self.LEN_PRESENT_POS)
 
             if dxl_getdata_result != True:
-                rospy.logerr("Failed to read Present Position from Motor ID: " + str(ID) + ". groupSyncRead getdata failed.\n")
+                rospy.logerr("Failed to read Present Position from Motor ID: " + str(ID) + ". groupSyncRead getdata failed.")
                 self.shutdown()
 
             self.present_position[ID] = self.pos_groupSyncRead.getData(ID, self.ADDR_PRESENT_POS, self.LEN_PRESENT_POS)
@@ -201,7 +201,7 @@ class Servos(object):
 
     def shutdown(self):
 
-        rospy.logwarn("Shutting down all motors.\n")
+        rospy.logwarn("Shutting down all motors.")
 
         for ID in self.DXL_ID:
             self.packetHandler.write1ByteTxRx(self.portHandler, ID, self.ADDR_LED_EN, False)
@@ -215,7 +215,7 @@ class Servos(object):
 def main():
 
     rospy.init_node("rot_motors_node")
-    freq = 10
+    freq = 100
     rate = rospy.Rate(freq)
 
     robot = Servos()

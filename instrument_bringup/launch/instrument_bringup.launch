@@ -6,16 +6,20 @@
     <param name="port" value="/dev/ttyUSB0"/>
   </node>
 
+  <node name="prism_joint__stepper" pkg="instrument_bringup" type="prism_joint__stepper.py" output="screen"/>
+
   <node name="rot_joints__servos" pkg="instrument_bringup" type="rot_joints__servos.py" output="screen"/>
+
 
   <param name="robot_description" textfile="$(find instrument_description)/urdf/instrument.urdf" />
 
   <!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /-->
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  
 
   <param name="use_gui" value="true"/>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find surgeon)/config/scissor_config.rviz" required="true"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find instrument_description)/config/instrument_config.rviz" required="true"/>
 
 </launch>

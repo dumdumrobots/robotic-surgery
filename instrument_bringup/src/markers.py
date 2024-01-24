@@ -11,14 +11,14 @@ class BallMarker(object):
     """
     id = 0
 
-    def __init__(self, color, alpha=1.0, scale=0.05):
+    def __init__(self, color, alpha=1.0, scale=0.025):
         """
         The color can be specified as a list with 3 elements or as the color
         dictionary (e.g. BLUE, RED, etc). Alpha sets the transparency and scale
         scales the size of the ball
 
         """
-        reference_frame = rospy.get_param('reference_frame','ref')
+        reference_frame = rospy.get_param('reference_frame','frame')
         self.marker_pub = rospy.Publisher("visualization_marker", Marker,
                                           queue_size=10)
         self.marker = Marker()
