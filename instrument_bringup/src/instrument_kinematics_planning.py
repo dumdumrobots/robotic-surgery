@@ -7,7 +7,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
 
 from markers import *
-from robotFunctions import *
+from robot_functions import *
 
 
 def correctAngles(q):

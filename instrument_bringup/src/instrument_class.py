@@ -15,7 +15,7 @@ class Instrument(object):
 
     def __init__(self):
 
-        self.present_q = np.array([0.0, 0.0, 0.0]) # mm / 100
+        self.present_q = np.array([0.0, 0.0, 0.0]) # q1 (mm / 100), q2 (rad), q3 (rad)
         self.present_end_transform = np.zeros((4,4))
 
         self.present_end_position = self.present_end_transform[0:3,3]
@@ -29,11 +29,15 @@ class Instrument(object):
         self.error_q = np.array([0.0, 0.0, 0.0])
         self.error_position = np.array([0.0, 0.0, 0.0])
 
+        self.scissor_state = False #Closed
+
         self.joints_names = ["world__frame",
                              "frame__platform",
                              "scissor_base__scissor_neck",
                              "scissor_neck__scissor__blade_top",
                              "scissor_base__scissor__blade_bot"]
+        
+        self.joint_position = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
         
         self.end_effector_marker = BallMarker(color['RED'])
         self.desired_effector_marker = BallMarker(color['GREEN'])
@@ -43,6 +47,9 @@ class Instrument(object):
         self.rot_joints__pp_sub = rospy.Subscriber("rot_joints__present_position",Int32MultiArray,self.update_rot_joints_shown_angles)
         self.prism_joint__cp_sub = rospy.Subscriber("prism_joint__current_position",Float32,self.update_prism_joint_shown_angle)
 
+        self.rot_joints__gp_pub = rospy.Publisher("rot_joints__goal_position",Int32MultiArray, queue_size=10)
+        self.prism_joint__gp_pub = rospy.Publisher("prism_joint__goal_position",Float32, queue_size=10)
+ 
  
     def dh_transformation(self, d, theta, a, alpha):
        sth = np.sin(theta)
@@ -89,7 +96,7 @@ class Instrument(object):
         self.desired_q = q
 
     def forward_kinematics(self,q):
-        d     = np.array([ q[0] + 0.22378,           0,     0])
+        d     = np.array([ q[0] + 0.56378,           0,     0])
         th    = np.array([              0, q[1] + pi/2,  q[2]])
         a     = np.array([              0,      0.0878, 0.135])
         alpha = np.array([           pi/2,        pi/2,     0])
@@ -113,10 +120,18 @@ class Instrument(object):
         self.error_position = self.desired_end_position - self.present_end_position 
 
     def update_rot_joints_shown_angles(self,msg):
-        pass
+        self.present_q[1] = (msg.data[1]*0.088 - 180) * (pi/180)
+
+        if (~self.scissor_state):
+            self.present_q[2] = (msg.data[0]*0.088 - 180) * (pi/180)
+        else:
+            self.present_q[2] = (msg.data[0]*0.088 - 180) * (pi/180) - 1/12*pi
+
+        self.joint_position[2:5] = np.hstack(((msg.data[1]*0.088 - 180) * (pi/180), (msg.data[2]*0.088 - 180) * (pi/180), (msg.data[0]*0.088 - 180) * (pi/180)))
 
     def update_prism_joint_shown_angle(self,msg):
         self.present_q[0] = msg.data / 100
+        self.joint_position[1] = msg.data / 100
 
 
     def update_shown_marker(self):
@@ -131,10 +146,17 @@ class Instrument(object):
         jstate.name = self.joints_names
         jstate.header.stamp = rospy.Time.now()
 
-        jstate.position = np.hstack(([0],self.present_q, self.present_q[2]))
+        jstate.position = self.joint_position
 
         self.joint_states_pub.publish(jstate)
 
+    def publish_prism_joint_goal_position(self):
+        
+        pj_gp_msg = Float32()
+
+        pj_gp_msg.data = self.desired_q[0] * 100
+
+        self.prism_joint__gp_pub.publish(pj_gp_msg)
 
 
 

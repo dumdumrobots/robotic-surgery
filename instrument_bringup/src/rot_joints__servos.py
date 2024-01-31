@@ -51,6 +51,9 @@ class Servos(object):
         self.ADDR_LED_EN = 65 
         self.ADDR_GOAL_POS = 116
         self.ADDR_PRESENT_POS = 132
+        self.ADDR_POS_D_GAIN = 80
+        self.ADDR_POS_I_GAIN = 82
+        self.ADDR_POS_P_GAIN = 84
 
         # --- Byte Length
         self.LEN_GOAL_POS = 4
@@ -103,8 +106,12 @@ class Servos(object):
             # --- Define Position Control / 4095 to 0 at 0.088 / 512 (45deg)
             dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, ID, self.ADDR_OP_MODE, 3)
 
-            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MAX_POS_LIMIT, 4095)
-            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MIN_POS_LIMIT, 0)
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_POS_D_GAIN, 0)
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_POS_I_GAIN, 30)
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_POS_P_GAIN, 400)
+
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MAX_POS_LIMIT, 2560)
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, ID, self.ADDR_MIN_POS_LIMIT, 1536)
 
             dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, ID, self.ADDR_TORQUE_EN, True)
 
@@ -215,7 +222,7 @@ class Servos(object):
 def main():
 
     rospy.init_node("rot_motors_node")
-    freq = 100
+    freq = 200
     rate = rospy.Rate(freq)
 
     robot = Servos()
@@ -225,6 +232,8 @@ def main():
         robot.set_goal_position()
         robot.read_present_position()
         robot.publish_present_position()
+
+        rate.sleep()
 
     rospy.on_shutdown(robot.shutdown())
 

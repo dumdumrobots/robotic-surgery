@@ -80,7 +80,7 @@ class Stepper(object):
 def main():
     rospy.init_node("stepper_node")
     
-    freq = 100
+    freq = 200
     rate = rospy.Rate(freq)
     dt = 1/freq
 
